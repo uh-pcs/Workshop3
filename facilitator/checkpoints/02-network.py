@@ -8,9 +8,8 @@ torch.manual_seed(0)
 
 class Linear:
     def __init__(self, in_features, out_features):
-        self.weights = torch.randn(in_features, out_features) * (
-            2 / in_features
-        ) ** 0.5
+        std = (2 / in_features) ** 0.5
+        self.weights = torch.randn(in_features, out_features) * std
         self.bias = torch.zeros(out_features)
         self.weights.requires_grad_()
         self.bias.requires_grad_()
@@ -36,9 +35,14 @@ class NeuralNetwork:
         self.relu2 = ReLU()
 
     def forward(self, x):
-        x = self.relu1.forward(self.layer1.forward(x))
-        x = self.relu2.forward(self.layer2.forward(x))
-        return self.layer3.forward(x)
+        x = self.layer1.forward(x)
+        x = self.relu1.forward(x)
+
+        x = self.layer2.forward(x)
+        x = self.relu2.forward(x)
+
+        x = self.layer3.forward(x)
+        return x
 
     def parameters(self):
         return (

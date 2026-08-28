@@ -1,9 +1,12 @@
-"""Workshop 3 final solution: a neural network built from PyTorch tensors."""
+"""PCS Workshop Intro final solution: a neural network built from PyTorch tensors."""
+
+import os
 
 import torch
 import torchvision
 
 
+# Seeded so the room sees the same numbers. Real training does not seed.
 torch.manual_seed(0)
 
 
@@ -11,9 +14,8 @@ class Linear:
     """One learned matrix multiplication: x @ weights + bias."""
 
     def __init__(self, in_features, out_features):
-        self.weights = torch.randn(in_features, out_features) * (
-            2 / in_features
-        ) ** 0.5
+        std = (2 / in_features) ** 0.5  # a sensible starting scale
+        self.weights = torch.randn(in_features, out_features) * std
         self.bias = torch.zeros(out_features)
 
         self.weights.requires_grad_()
@@ -63,7 +65,14 @@ class NeuralNetwork:
 
 
 def load_data(root="./data", train_limit=None):
-    """Download MNIST and turn every 28x28 image into 784 numbers."""
+    """Download MNIST and turn every 28x28 image into 784 numbers.
+
+    Set the MNIST_TRAIN_LIMIT environment variable to train on fewer images on a
+    memory-constrained machine. The workshop path in Colab uses all 60,000.
+    """
+
+    if train_limit is None and os.environ.get("MNIST_TRAIN_LIMIT"):
+        train_limit = int(os.environ["MNIST_TRAIN_LIMIT"])
 
     train_data = torchvision.datasets.MNIST(
         root=root,
@@ -121,14 +130,17 @@ def main():
             parameter.grad.zero_()
 
         # 5. REPEAT, pausing occasionally to watch learning happen.
-        if epoch == 1 or epoch % 10 == 0 or epoch == epochs:
+        step = 1 if epochs <= 15 else 10
+        if epoch == 1 or epoch == epochs or epoch % step == 0:
             with torch.no_grad():
-                test_accuracy = accuracy(model.forward(x_test), target_test)
+                train_acc = accuracy(model.forward(x), target)
+                test_acc = accuracy(model.forward(x_test), target_test)
 
             print(
                 f"epoch {epoch:3d}  "
                 f"loss {loss.item():.4f}  "
-                f"test_acc {test_accuracy:.4f}"
+                f"train_acc {train_acc:.4f}  "
+                f"test_acc {test_acc:.4f}"
             )
 
 

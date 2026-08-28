@@ -1,4 +1,4 @@
-"""Workshop 3: build a neural network that reads handwritten digits."""
+"""PCS Workshop Intro: build a neural network that reads handwritten digits."""
 
 import torch
 import torchvision

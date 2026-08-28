@@ -1,6 +1,4 @@
-# Workshop 3 — Build a Neural Network That Reads Handwriting
-
-Session 3 of the PCS **From Zero to AI** series.
+# PCS Workshop Intro — Build a Neural Network That Reads Handwriting
 
 In one hour, you will build a neural network in one Python file and teach it to
 recognize handwritten digits from MNIST. You will write the layers, make the
@@ -14,7 +12,10 @@ The one idea to remember:
 
 **Forward Pass → Loss → Backpropagation → Update Weights → Repeat**
 
-Google Slides: [PCS Workshop 3 — Build a Neural Network That Reads Handwriting](https://docs.google.com/presentation/d/15u64H2RkaHIWpErKeOLNS99TGJjibNAxYQkEH4V18us/edit?usp=drivesdk)
+Slides:
+
+- In the room: [PCS Workshop Intro — Build a Neural Network That Reads Handwriting](https://docs.google.com/presentation/d/15u64H2RkaHIWpErKeOLNS99TGJjibNAxYQkEH4V18us/edit?usp=drivesdk)
+- Offline copy in this repo: [`slides/pcs-workshop-intro.pdf`](slides/pcs-workshop-intro.pdf)
 
 ---
 
@@ -29,7 +30,8 @@ Google Slides: [PCS Workshop 3 — Build a Neural Network That Reads Handwriting
    `/content/mnist_network.py`.
 5. Follow the slides and build the file with the facilitator.
 6. Save before each notebook checkpoint.
-7. At the end, use the notebook's download cell to keep your Python file.
+7. At the end, run the "see one real prediction" and "watch it learn" cells, then
+   use the download cell to keep your Python file.
 
 The notebook downloads MNIST during setup. Start that cell while the opening
 slides are on screen so the data is ready when the code needs it.
@@ -49,7 +51,7 @@ The finished model uses:
 - cross-entropy loss;
 - a manual gradient-descent update;
 - MNIST from torchvision;
-- live test-accuracy output.
+- live train and test accuracy output.
 
 It deliberately does **not** use `torch.nn.Linear`, `torch.nn.Sequential`, or a
 PyTorch optimizer. Those tools are useful after you understand what they hide.
@@ -68,26 +70,33 @@ restore a known-good stage. Recovery exists to keep everyone in the final payoff
 
 ## The payoff
 
-The first run trains for 10 epochs. You should see loss fall and accuracy rise:
+The first run trains for 10 epochs. Random guessing scores about 10%. You should
+see loss fall and accuracy rise well past that:
 
 ```text
-epoch   1  loss 2.4849  test_acc 0.1540
-epoch  10  loss 1.6871  test_acc 0.6460
+epoch   1  loss 2.4849  train_acc 0.1523  test_acc 0.1540
+epoch  10  loss 1.6871  train_acc 0.6402  test_acc 0.6460
 ```
 
 Then change `epochs = 10` to `epochs = 60` and run again. On a standard Colab
 CPU, the final test accuracy should land roughly between 85% and 90%. Exact
 values and runtime can vary slightly.
 
+After training, the notebook prints one real test image as text with the model's
+guess beside the true digit, and plots the loss and accuracy curves.
+
 ## What's in this repository
 
-- `mnist_workshop.ipynb` — Colab setup, checkpoints, recovery, execution, and download
+- `mnist_workshop.ipynb` — Colab setup, checkpoints, recovery, execution, inspection, and download
 - `starter/mnist_network.py` — the small file students begin with
 - `solution/mnist_network.py` — the complete teaching solution
+- `solution/inspect_model.py` — optional helpers to see digits, mistakes, weights, and curves
 - `facilitator/checkpoints/` — staged recovery snapshots for the live room
 - `FACILITATOR.md` — pedagogy, timing, code reveals, expected output, and quick fixes
 - `EXTENSIONS.md` — optional experiments after the core hour
+- `slides/` — offline PDF of the deck and the source used to build it
 - `tests/` — behavioral and notebook-structure verification
+- `docs/design-history/` — the design and planning notes behind this workshop
 
 ## Run the solution locally instead
 
@@ -104,8 +113,14 @@ PyTorch installation differs by operating system. Use the official selector at
 [pytorch.org/get-started](https://pytorch.org/get-started/locally/) rather than
 spending workshop time debugging local packages.
 
-On a memory-constrained local machine, edit `load_data()` to pass
-`train_limit=20000`. The official Colab path uses all 60,000 training images.
+On a memory-constrained local machine, run with `MNIST_TRAIN_LIMIT` set to train
+on fewer images:
+
+```bash
+MNIST_TRAIN_LIMIT=20000 python solution/mnist_network.py
+```
+
+The official Colab path uses all 60,000 training images.
 
 ## Troubleshooting
 
@@ -118,14 +133,15 @@ On a memory-constrained local machine, edit `load_data()` to pass
   `with torch.no_grad():`.
 - **`parameter.grad` is `None`** — confirm weights and biases call
   `requires_grad_()` and that `loss.backward()` ran.
-- **MNIST download is slow** — let it continue while following the opening
-  slides; pair with a neighbor if the event network blocks one runtime.
+- **MNIST download fails or is slow** — the setup cell prints the error; let it
+  continue while following the opening slides, and pair with a neighbor if the
+  event network blocks one runtime.
 
 ## Keep experimenting
 
 Open [EXTENSIONS.md](EXTENSIONS.md) after the workshop to vary epochs, learning
-rate, hidden size, individual predictions, batches, GPU execution, and the
-high-level `torch.nn` version.
+rate, hidden size, individual predictions, batches, GPU execution, weight
+pictures, initialization, and the high-level `torch.nn` version.
 
 ## License
 

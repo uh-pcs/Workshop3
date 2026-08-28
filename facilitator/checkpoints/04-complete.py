@@ -1,5 +1,7 @@
 """Self-contained final recovery checkpoint for the live room."""
 
+import os
+
 import torch
 import torchvision
 
@@ -9,9 +11,8 @@ torch.manual_seed(0)
 
 class Linear:
     def __init__(self, in_features, out_features):
-        self.weights = torch.randn(in_features, out_features) * (
-            2 / in_features
-        ) ** 0.5
+        std = (2 / in_features) ** 0.5
+        self.weights = torch.randn(in_features, out_features) * std
         self.bias = torch.zeros(out_features)
         self.weights.requires_grad_()
         self.bias.requires_grad_()
@@ -37,9 +38,14 @@ class NeuralNetwork:
         self.relu2 = ReLU()
 
     def forward(self, x):
-        x = self.relu1.forward(self.layer1.forward(x))
-        x = self.relu2.forward(self.layer2.forward(x))
-        return self.layer3.forward(x)
+        x = self.layer1.forward(x)
+        x = self.relu1.forward(x)
+
+        x = self.layer2.forward(x)
+        x = self.relu2.forward(x)
+
+        x = self.layer3.forward(x)
+        return x
 
     def parameters(self):
         return (
@@ -50,13 +56,18 @@ class NeuralNetwork:
 
 
 def load_data(root="./data", train_limit=None):
+    if train_limit is None and os.environ.get("MNIST_TRAIN_LIMIT"):
+        train_limit = int(os.environ["MNIST_TRAIN_LIMIT"])
+
     train_data = torchvision.datasets.MNIST(root=root, train=True, download=True)
     test_data = torchvision.datasets.MNIST(root=root, train=False, download=True)
+
     x = train_data.data.float().view(-1, 784) / 255.0
     target = train_data.targets
     if train_limit is not None:
         x = x[:train_limit]
         target = target[:train_limit]
+
     x_test = test_data.data.float().view(-1, 784) / 255.0
     target_test = test_data.targets
     return x, target, x_test, target_test
@@ -84,13 +95,16 @@ def main():
         for parameter in model.parameters():
             parameter.grad.zero_()
 
-        if epoch == 1 or epoch % 10 == 0 or epoch == epochs:
+        step = 1 if epochs <= 15 else 10
+        if epoch == 1 or epoch == epochs or epoch % step == 0:
             with torch.no_grad():
-                test_accuracy = accuracy(model.forward(x_test), target_test)
+                train_acc = accuracy(model.forward(x), target)
+                test_acc = accuracy(model.forward(x_test), target_test)
             print(
                 f"epoch {epoch:3d}  "
                 f"loss {loss.item():.4f}  "
-                f"test_acc {test_accuracy:.4f}"
+                f"train_acc {train_acc:.4f}  "
+                f"test_acc {test_acc:.4f}"
             )
 
 

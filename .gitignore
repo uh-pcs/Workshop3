@@ -6,3 +6,8 @@ data/
 *.pyc
 *.pyo
 *.swp
+
+# Slide build intermediates (source is slides/build_deck.py; deliverables are .pptx/.pdf)
+slides/pcs-workshop-intro.fodp
+slides/slide-*.jpg
+slides/contact*.jpg
