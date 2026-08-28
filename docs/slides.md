@@ -11,24 +11,34 @@ strip on its live-build slide, not a slide of its own.
 
 ## Visual system
 
+A sibling of the other "From Zero to …" workshop decks — dark canvas, monospace
+section labels, bold sans titles, dark bordered cards, an amber warning callout.
+This deck's own signature is **violet** (the learning signal) and the
+**pixel-grid mark**.
+
 | Token | Value | Use |
 |---|---|---|
-| canvas | `#FFF9EE` | slide background |
-| ink | `#24303A` | all body and title text |
-| blue | `#367BF5` | arrows only — never small text on canvas |
-| yellow | `#FFD85A` | highlighter cards and fills only — never text |
-| green | `#43B581` / mint `#E8F6EF` | checkpoint strips, completed loop steps |
-| pale blue | `#EAF2FF` | code panels, shape banners, side notes |
+| canvas | `#0E1119` | slide background (deep navy-black) |
+| ink | `#ECEEF2` | titles and key text |
+| body | `#A7B0BC` | supporting text |
+| faint | `#6B7480` | captions, card numbers, slide tab |
+| violet | `#8B80F9` | signature accent: the digit, arrows, "read it as" cards, gradients |
+| amber | `#F5B301` | payoff stats + the warning callout border |
+| green | `#46D07E` | monospace kicker labels, checkpoint strips, the ✓ only |
+| blue | `#5A9DFF` | the italic "remember this" accent line |
+| panel | `#0A0C12` + `#272C38` border | code panels, cards, terminal mockups |
 
-Fonts: design intent is titles **Poppins**, body **Inter**, code **JetBrains
-Mono** (all render in Google Slides). The built `.pptx`/`.pdf` use Office-safe
-substitutes (Calibri, Consolas) so the offline copy renders identically
-everywhere; swap after import if wanted. Format 16:9.
+Fonts: the built `.pptx`/`.pdf` use **Arial** (title/body) and **DejaVu Sans
+Mono** (code) so the offline copy renders true everywhere. In Google Slides, swap
+titles to **Poppins**/**Montserrat** and code to **Roboto Mono** if wanted.
+Format 16:9.
 
-Grammar: warm dot-free canvas; kicker pill top-left; the five-step loop diagram on
-slide 2 and again on slide 12 with every step checked; pixel tiles for digits;
-light code panels; yellow "read it as" cards; green checkpoint strips; slide tabs
-bottom-right.
+Grammar: pixel-grid mark + green monospace kicker top-left; bold sans title
+left-aligned; one strong visual per slide (cards, code panel + violet card,
+terminal, stat row, flow, or a pixel digit); the five-step loop strip on slide 2
+and again on slide 12 with every step checked; amber `!` callout for the one thing
+not to miss; green checkpoint strip pinned near the bottom of live-build slides;
+`NN / 15` tab bottom-right.
 
 Every coding slide's speaker notes carry: concept, expected output, pause point,
 likely stumble, recovery checkpoint.
