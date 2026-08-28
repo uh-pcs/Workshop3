@@ -1,0 +1,285 @@
+# Facilitator Guide — Workshop 3: Build a Neural Network
+
+This is the teaching plan behind the workshop. Students do not need this file.
+Read it once before the session, then keep the timing and recovery sections open
+while you teach.
+
+## The one idea to land
+
+> **A neural network learns by making a guess, measuring how wrong it was, and
+> slightly changing its weights.**
+
+Everything in the hour serves that sentence. Keep this loop visible and point to
+the current stage whenever the code changes:
+
+**Forward Pass → Loss → Backpropagation → Update Weights → Repeat**
+
+Avoid turning backpropagation into a calculus lecture. The explanation students
+need today is:
+
+> “PyTorch remembers the operations from the forward pass. `backward()` walks
+> back through them and tells us how each weight contributed to the error.”
+
+## Why one Python file
+
+Like the command center in Workshop1 and the image blur in Workshop2, this hour
+produces one meaningful artifact. The classes are not isolated exercises:
+
+- `Linear` becomes the learned matrix multiplication inside the network.
+- `ReLU` gives the stacked layers a bend.
+- `NeuralNetwork` turns the pieces into ten digit scores.
+- The training loop makes that same network improve.
+
+Students edit `/content/mnist_network.py` in Colab. The notebook is only a
+workbench for setup, checkpoints, recovery, execution, and download. Keep the
+Google Slides deck on the projector and return to the notebook only at marked
+checkpoints.
+
+## The PCS through-line
+
+Workshop2 moved from image blur to matrix multiplication to AI. This workshop
+picks up exactly there. On the matrix-multiplication slide, say:
+
+> “Remember matrix multiplication? Here is where it starts becoming AI.”
+
+The callback must not become a prerequisite. Define rows, columns, and shapes in
+plain language so a newcomer can still follow.
+
+## Before the room arrives
+
+1. Open the Colab badge from the README in a signed-out or private browser.
+2. Confirm the runtime hardware accelerator is **None**.
+3. Run the setup cell and verify the repo clones, the starter file appears, and
+   both MNIST splits download.
+4. Run the three checkpoint cells against the corresponding recovery files.
+5. Run the final solution for 10 epochs, then 60 epochs.
+6. Confirm the Google Slides link opens without edit permission.
+7. Put the setup slide on screen as students enter and ask them to run the first
+   notebook cell immediately.
+
+Run this preflight once the day before and again on the event network. Colab
+runtimes change over time; the setup cell prints Python, PyTorch, and GPU status
+so a failure starts with useful evidence.
+
+## Timing — 60 minutes
+
+| Time | Segment | Room checkpoint |
+|---|---|---|
+| 0:00–0:04 | Open Colab and ask whether a computer can read a handwritten digit | Setup cell says `Ready` |
+| 0:04–0:08 | Establish the guess/error/change/repeat loop | Students can say the loop aloud |
+| 0:08–0:12 | Turn 28×28 pixels into 784 numbers | Shape `784` is visible |
+| 0:12–0:17 | Connect matrix multiplication to a learned layer | Land the PCS callback line |
+| 0:17–0:24 | Build `Linear` | Notebook Checkpoint 1 passes |
+| 0:24–0:28 | Explain and build `ReLU` | Negative values become zero |
+| 0:28–0:35 | Stack `NeuralNetwork` and trace dimensions | Checkpoint 2 passes |
+| 0:35–0:40 | Load MNIST and interpret ten logits | Students identify `argmax` as the guess |
+| 0:40–0:44 | Explain cross-entropy loss | Loss means wrongness, not accuracy |
+| 0:44–0:49 | Backward, manual update, and gradient clearing | Checkpoint 3 passes |
+| 0:49–0:54 | Assemble the complete training loop | Point to all five loop stages |
+| 0:54–0:57 | Run 10 epochs and read output | Loss falls; accuracy rises |
+| 0:57–0:59 | Change 10 to 60 and rerun | Accuracy reaches roughly 85–90% |
+| 0:59–1:00 | Recap and download the file | Students keep their artifact |
+
+If setup runs slowly, teach the hook and the learning loop while MNIST downloads.
+
+## Code reveal cadence
+
+Each row corresponds to a coding slide. Show the chunk, explain its job, type it
+with the room, save, then run the named checkpoint. Do not paste the full
+solution at the beginning.
+
+### Build `Linear`
+
+Concept: a layer is a learned matrix multiplication plus a bias.
+
+```python
+class Linear:
+    def __init__(self, in_features, out_features):
+        self.weights = torch.randn(in_features, out_features) * (
+            2 / in_features
+        ) ** 0.5
+        self.bias = torch.zeros(out_features)
+
+        self.weights.requires_grad_()
+        self.bias.requires_grad_()
+
+    def forward(self, x):
+        return x @ self.weights + self.bias
+
+    def parameters(self):
+        return [self.weights, self.bias]
+```
+
+Say: “The values start random. Learning means improving these values.” Do not
+derive the initialization formula; call it a sensible starting scale.
+
+Expected Checkpoint 1 output:
+
+```text
+✅ Linear checkpoint passed: (3, 784) → (3, 128)
+```
+
+Recovery: run `recover(1)` in the notebook.
+
+### Build `ReLU`
+
+Concept: without a bend, several linear transformations collapse into one larger
+linear transformation.
+
+```python
+class ReLU:
+    def forward(self, x):
+        return x.clamp(min=0)
+```
+
+Use a spoken example: `[-2, 0, 3]` becomes `[0, 0, 3]`. Avoid discussing
+derivatives unless a student asks after the workshop.
+
+### Stack the network
+
+Concept: each layer changes the representation while the shapes tell us what can
+connect to what.
+
+```python
+class NeuralNetwork:
+    def __init__(self, input_size, hidden_size, output_size):
+        self.layer1 = Linear(input_size, hidden_size)
+        self.layer2 = Linear(hidden_size, hidden_size)
+        self.layer3 = Linear(hidden_size, output_size)
+        self.relu1 = ReLU()
+        self.relu2 = ReLU()
+
+    def forward(self, x):
+        x = self.layer1.forward(x)
+        x = self.relu1.forward(x)
+        x = self.layer2.forward(x)
+        x = self.relu2.forward(x)
+        return self.layer3.forward(x)
+
+    def parameters(self):
+        return (
+            self.layer1.parameters()
+            + self.layer2.parameters()
+            + self.layer3.parameters()
+        )
+```
+
+Trace `784 → 128 → 128 → 10` with your finger before running anything.
+
+Expected Checkpoint 2 output:
+
+```text
+✅ Network checkpoint passed: (4, 784) → (4, 10)
+```
+
+Recovery: run `recover(2)`.
+
+### Load MNIST
+
+Concept: flatten each image and scale pixel brightness from 0–255 into 0–1.
+
+Use the `load_data()` function from `solution/mnist_network.py`. Pause after
+`view(-1, 784)` and ask what `-1` means: “however many images there are.” Note
+that `dataset.data` is used directly, so no transform is required.
+
+### Loss and backward
+
+Concept: loss is one number describing wrongness; backward supplies a gradient
+for every parameter.
+
+```python
+prediction = model.forward(x)
+loss = torch.nn.functional.cross_entropy(prediction, target)
+loss.backward()
+```
+
+Do not call logits probabilities. They are ten raw scores; cross-entropy knows
+how to compare those scores with the correct digit.
+
+### Update and clear
+
+Concept: each gradient points toward more error, so subtract a small amount.
+
+```python
+with torch.no_grad():
+    for parameter in model.parameters():
+        parameter -= learning_rate * parameter.grad
+
+for parameter in model.parameters():
+    parameter.grad.zero_()
+```
+
+Say: “`no_grad()` means this is the change itself, not another operation PyTorch
+should learn through.” Then explain that gradients add by default, like writing
+new directions on top of old directions without erasing the board.
+
+Expected Checkpoint 3 output resembles:
+
+```text
+✅ Learning checkpoint passed: 1.0247 → 0.8123
+```
+
+The exact numbers may vary if the student changed initialization. Recovery:
+`recover(3)`.
+
+### Assemble and run
+
+Use `main()` from the final solution as the reveal. Point to the five numbered
+comments and make the room name each stage before execution.
+
+Expected default output resembles:
+
+```text
+epoch   1  loss 2.4849  test_acc 0.1540
+epoch  10  loss 1.6871  test_acc 0.6460
+```
+
+After changing `epochs = 10` to `epochs = 60`, expect the final accuracy to land
+roughly between 0.85 and 0.90. The trend matters more than one exact value.
+
+Final recovery: run `recover(4)`, reopen the file, and continue with the room.
+
+## Common stumbles and quick fixes
+
+- **`ModuleNotFoundError: mnist_network`** → the file was renamed or moved.
+  Confirm `/content/mnist_network.py` exists in the Files panel.
+- **Checkpoint still sees old code** → save the editor tab. Checkpoints already
+  launch fresh processes, so saving is the missing step.
+- **Shape mismatch near `@`** → compare adjacent dimensions in
+  `784 → 128 → 128 → 10`; the inside numbers must match.
+- **`parameter.grad` is `None`** → `loss.backward()` did not run, or the student
+  forgot `requires_grad_()` on weights and bias.
+- **“A leaf Variable that requires grad is being used in an in-place operation”**
+  → move the weight update inside `with torch.no_grad():`.
+- **Loss behaves strangely on the second epoch** → gradients were not cleared.
+- **MNIST download stalls** → keep teaching while it downloads. If several
+  students are blocked, pair them with a working neighbor and continue the core
+  build; do not sacrifice the final payoff to network troubleshooting.
+- **Colab runtime disappeared** → rerun setup, then use the latest recovery stage.
+- **Accuracy differs slightly** → confirm `torch.manual_seed(0)` and focus on the
+  downward-loss/upward-accuracy trend.
+
+## Pacing radar and recovery
+
+Use the three green checkpoint messages as your room-wide pacing radar. At minute
+49, anyone without Checkpoint 3 should use `recover(3)`. At minute 53, anyone
+without a complete `main()` should use `recover(4)`. Recovery is not failure; it
+protects the shared payoff.
+
+If behind, trim in this order:
+
+1. Demonstrate the optional learning-rate experiment instead of having everyone
+   run it.
+2. Shorten the logits discussion to “ten scores; biggest score wins.”
+3. Use recovery snapshots earlier.
+
+Never cut the manual update, the final training run, or the one-minute recap.
+
+## Close the loop
+
+End on the same sentence you began with:
+
+> “Your network made a guess, measured how wrong it was, changed its weights a
+> little, and repeated. Matrix multiplication became a system that learns.”
+
+Then have students download `mnist_network.py` before the Colab runtime expires.
