@@ -35,10 +35,10 @@ def test_workshop_is_presented_as_the_intro():
         assert forbidden not in text, forbidden
 
 
-def test_repository_urls_remain_workshop3():
+def test_repository_urls_point_at_the_org():
     readme = (ROOT / "README.md").read_text()
-    assert "github.com/daryl-888/Workshop3" in readme
-    assert "github/daryl-888/Workshop3/blob/main/mnist_workshop.ipynb" in readme
+    assert "github.com/uh-pcs/Workshop3" in readme
+    assert "github/uh-pcs/Workshop3/blob/main/mnist_workshop.ipynb" in readme
 
 
 def test_notebook_colab_title_uses_the_intro_name():

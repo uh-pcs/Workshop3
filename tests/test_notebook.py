@@ -33,7 +33,7 @@ def test_setup_clones_public_repo_copies_starter_and_preloads_mnist():
     notebook = load_notebook()
     setup = code_sources(notebook)[0]
 
-    assert "https://github.com/daryl-888/Workshop3.git" in setup
+    assert "https://github.com/uh-pcs/Workshop3.git" in setup
     assert "starter/mnist_network.py" in setup
     assert "/content/mnist_network.py" in setup
     assert "torchvision.datasets.MNIST" in setup

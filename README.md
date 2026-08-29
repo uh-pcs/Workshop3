@@ -21,7 +21,7 @@ Slides:
 
 ## Start the workshop — one click
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/daryl-888/Workshop3/blob/main/mnist_workshop.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/uh-pcs/Workshop3/blob/main/mnist_workshop.ipynb)
 
 1. Click **Open in Colab**.
 2. Leave the runtime on the standard **CPU** setting. No GPU is required.
@@ -29,9 +29,12 @@ Slides:
 4. In Colab's left sidebar, click the **folder** icon and double-click
    `/content/mnist_network.py`.
 5. Follow the slides and build the file with the facilitator.
-6. Save before each notebook checkpoint.
-7. At the end, run the "see one real prediction" and "watch it learn" cells, then
+6. Save the Python file (Ctrl/Cmd+S in the editor) before each checkpoint cell.
+7. At the end, run the "see it read one digit" and "learning curve" cells, then
    use the download cell to keep your Python file.
+
+Your work is `mnist_network.py`, not the notebook — use the download cell, not
+Colab's **File → Save**.
 
 The notebook downloads MNIST during setup. Start that cell while the opening
 slides are on screen so the data is ready when the code needs it.
@@ -104,7 +107,7 @@ The live room should use Colab. Local setup is an optional fallback for someone
 who already has Python and PyTorch installed:
 
 ```bash
-git clone https://github.com/daryl-888/Workshop3.git
+git clone https://github.com/uh-pcs/Workshop3.git
 cd Workshop3
 python solution/mnist_network.py
 ```
