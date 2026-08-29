@@ -75,7 +75,7 @@ so a failure starts with useful evidence.
 
 | Time | Segment | Room checkpoint |
 |---|---|---|
-| 0:00–0:04 | Show a handwritten digit and ask whether a computer can read it | Setup cell says `Ready` |
+| 0:00–0:04 | Show a handwritten digit and ask whether a computer can read it | Setup cell prints `READY` |
 | 0:04–0:08 | Establish the guess/error/change/repeat loop | Students can say the loop aloud |
 | 0:08–0:12 | Turn 28×28 pixels into 784 numbers | Shape `784` is visible |
 | 0:12–0:17 | Explain a layer as weighted sums plus a bias | Land the standalone layer explanation |
@@ -134,7 +134,9 @@ neither tiny nor huge.
 Expected Checkpoint 1 output:
 
 ```text
-✅ Linear checkpoint passed: (3, 784) → (3, 128)
+Linear:  (3, 784) -> (3, 128)
+
+Checkpoint 1 passed - save and keep going.
 ```
 
 Recovery: run `recover(1)` in the notebook.
@@ -190,7 +192,9 @@ Trace `784 → 128 → 128 → 10` with your finger before running anything.
 Expected Checkpoint 2 output:
 
 ```text
-✅ Network checkpoint passed: (4, 784) → (4, 10)
+Network:  (4, 784) -> (4, 10)   with 6 trainable tensors
+
+Checkpoint 2 passed - save and keep going.
 ```
 
 Recovery: run `recover(2)`.
@@ -239,7 +243,9 @@ new directions on top of old directions without erasing the board.
 Expected Checkpoint 3 output resembles:
 
 ```text
-✅ Learning checkpoint passed: 1.0247 → 0.8123
+Learning:  loss 1.0247 -> 0.8123
+
+Checkpoint 3 passed - your learning loop works.
 ```
 
 The exact numbers may vary if the student changed initialization. Recovery:
@@ -291,7 +297,7 @@ read. The "watch it learn" cell then plots loss and accuracy over the epochs.
 
 ## Pacing radar and recovery
 
-Use the three green checkpoint messages as your room-wide pacing radar. At minute
+Use the three `Checkpoint N passed` messages as your room-wide pacing radar. At minute
 49, anyone without Checkpoint 3 should use `recover(3)`. At minute 53, anyone
 without a complete `main()` should use `recover(4)`. Recovery is not failure; it
 protects the shared payoff.
