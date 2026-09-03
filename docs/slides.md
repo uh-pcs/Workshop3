@@ -7,7 +7,7 @@ here first, then run `python3 slides/build_deck.py`.
 
 **15 slides** for a 60-minute live-coding session — slides are reference points
 between typing, not a lecture. Each of the three notebook checkpoints is a green
-strip on its live-build slide, not a slide of its own.
+strip on its STEP slide, not a slide of its own.
 
 ## Visual system
 
@@ -35,13 +35,23 @@ Format 16:9.
 
 Grammar: pixel-grid mark + green monospace kicker top-left; bold sans title
 left-aligned; one strong visual per slide (cards, code panel + violet card,
-terminal, stat row, flow, or a pixel digit); the five-step loop strip on slide 2
-and again on slide 12 with every step checked; amber `!` callout for the one thing
+terminal, stat row, flow, or a pixel digit); the five-step loop strip on slide 2;
+amber `!` callout for the one thing
 not to miss; green checkpoint strip pinned near the bottom of live-build slides;
 `NN / 15` tab bottom-right.
 
 Every coding slide's speaker notes carry: concept, expected output, pause point,
 likely stumble, recovery checkpoint.
+
+## Slides, code, and the notebook
+
+`facilitator/parts/` is the single source of truth. The notebook's STEP cells
+write those same fragments, `solution/mnist_network.py` is generated from them,
+and the code panels on slides 5, 7, 9 and 12 show them verbatim.
+`tests/test_slides_match_code.py` fails if any of the three drift apart, so
+**edit the parts first, then the deck.**
+
+Slides that require typing carry a `STEP n` kicker naming the notebook cell.
 
 ---
 
@@ -67,9 +77,8 @@ one file, built from scratch, that learns to read these.
 **Visual:** the five-step loop — Forward · Loss · Backprop · Update · Repeat.
 **Marker:** every line of code today belongs to one of these five moves.
 
-**Notes:** If a student remembers one sentence tomorrow, make it the title. The
-loop returns on slide 12 with every step checked — point here whenever the code
-changes.
+**Notes:** If a student remembers one sentence tomorrow, make it the title. Slide
+12 shows this same loop as real Python — point here whenever the code changes.
 
 ## 3 — The input
 
@@ -99,27 +108,27 @@ dims survive.
 **Notes:** No prior workshop to lean on — build it from "multiply and add". Trace
 the shapes with a finger: the 784 on both sides cancels; `(images, 128)` is left.
 
-## 5 — Live build: Linear
+## 5 — STEP 1: `Linear`
 
-**Kicker:** Live build · Linear · **Title:** Build one learned layer
+**Kicker:** STEP 1 · Linear · **Title:** Build one learned layer
 **Code panel:** the `Linear` class (`std`, `torch.randn * std`, `torch.zeros`,
 `requires_grad_()`, `forward`, `parameters`).
 **Side text:** random weights, zero biases; ask PyTorch to track them; `forward()`
 makes the guess; `parameters()` hands the loop every value it may change.
-**Checkpoint 1 strip:** save the file, run the cell. Expect `(3, 784) → (3, 128)`.
+**Checkpoint 1 strip:** three images through one layer. Expect `(3, 784) → (3, 128)`.
 
 **Notes:**
 - *Concept:* a layer is a learned matrix multiply plus a bias.
-- *Expected:* `Linear checkpoint passed: (3, 784) → (3, 128)`
+- *Expected:* `Linear:  (3, 784) -> (3, 128)` then `Checkpoint 1 PASSED`
 - *Pause:* after `forward()` — "this one line is the guess."
 - *Stumble:* forgetting `requires_grad_()` (grads are `None` later); mismatched
   `@` shapes.
 - Do not derive the `std` formula — call it a sensible starting scale.
 - *Recovery:* `recover(1)`.
 
-## 6 — Live build: ReLU
+## 6 — STEP 2: `ReLU`
 
-**Kicker:** Live build · ReLU · **Title:** Add a bend
+**Kicker:** STEP 2 · ReLU · **Title:** Add a bend
 **Code panel:** `class ReLU: def forward(self, x): return x.clamp(min=0)`
 - Stack linear layers with nothing between them and the whole stack is still just
   one linear layer.
@@ -134,13 +143,13 @@ makes the guess; `parameters()` hands the loop every value it may change.
 - *Stumble:* `x.clamp(0)` (that's `max`), or `max(x, 0)` on a tensor.
 - *Recovery:* `recover(2)`.
 
-## 7 — Live build: NeuralNetwork
+## 7 — STEP 3: `NeuralNetwork`
 
-**Kicker:** Live build · Network · **Title:** 784 → 128 → 128 → 10
+**Kicker:** STEP 3 · NeuralNetwork · **Title:** 784 → 128 → 128 → 10
 **Subtitle:** Linear, ReLU, Linear, ReLU, Linear. The ReLUs change values, not
 dimensions.
-**Code panel:** the `NeuralNetwork` class with the step-by-step `forward` and the
-`parameters()` concatenation.
+**Two code panels:** left, `class` + `__init__`; right, `forward` **and**
+`parameters()`. All three methods are on screen — Checkpoint 2 needs every one.
 **Side text:** `parameters()` adds up to six tensors — three weights, three
 biases.
 **Checkpoint 2 strip:** four images become ten scores each. Expect
@@ -148,7 +157,7 @@ biases.
 
 **Notes:**
 - *Concept:* the pieces become one object that turns pixels into ten scores.
-- *Expected:* `Network checkpoint passed: (4, 784) → (4, 10)`
+- *Expected:* `Network:  (4, 784) -> (4, 10)` then `Checkpoint 2 PASSED`
 - *Pause:* count the six tensors together before running.
 - *Stumble:* `self.layer1(x)` instead of `.forward(x)`; a missing ReLU.
 - *Recovery:* `recover(2)`.
@@ -166,9 +175,9 @@ biases.
 **Notes:** Show softmax once so "logit" isn't a loose end, then set it aside — we
 never need it to train. Biggest score wins, with or without it.
 
-## 9 — Live build: data
+## 9 — STEP 4: `load_data` and `accuracy`
 
-**Kicker:** Live build · Data · **Title:** Load MNIST
+**Kicker:** STEP 4 · load_data + accuracy · **Title:** Load MNIST
 **Code panel:** the two `torchvision.datasets.MNIST` calls and the
 `.data.float().view(-1, 784) / 255.0` / `.targets` lines for train and test.
 **Side text:** examples for learning, separate examples for testing; flatten to
@@ -198,9 +207,9 @@ the loss.
 **Notes:** Loss is wrongness, not accuracy. Do not open the calculus — the yellow
 card is the whole explanation students need today.
 
-## 11 — Live build: update
+## 11 — Inside the loop: the update
 
-**Kicker:** Live build · Update · **Title:** One small step, then clear
+**Kicker:** Inside the loop · the update · **Title:** One small step, then clear
 **Code panel:** `loss.backward()`, the `with torch.no_grad()` update loop, the
 `parameter.grad.zero_()` loop.
 **Side text:** each gradient points toward more error, so subtract a little of it
@@ -212,21 +221,18 @@ itself; clear the grads, or the next round mixes old with new.
 **Notes:**
 - *Concept:* gradient descent — step opposite the gradient, a little; then zero
   the grads.
-- *Expected:* `Learning checkpoint passed: 1.0247 → 0.8123` (numbers vary).
+- *Expected:* `Learning:  loss 1.0247 -> 0.8123` then `Checkpoint 3 PASSED`.
 - *Pause:* "why minus?" — the gradient points uphill; we want downhill.
 - *Stumble:* update outside `no_grad()` → in-place leaf error; forgetting
   `zero_()` → loss lurches on epoch 2.
 - *Recovery:* `recover(3)`.
 
-## 12 — It's all the loop
+## 12 — STEP 5: `main`
 
-**Kicker:** The code is the loop · **Title:** Nothing is hidden
-**Visual:** the five-step loop, every step checked, each labelled with its line:
-1. `prediction = model.forward(x)`
-2. `loss = cross_entropy(prediction, target)`
-3. `loss.backward()`
-4. `parameter -= learning_rate * parameter.grad`
-5. `parameter.grad.zero_()` → next epoch
+**Kicker:** STEP 5 · main · **Title:** Nothing is hidden
+**Code panel (full width):** the whole of `main()` — twenty lines, exactly what
+goes into the STEP 5 cell. Printing is delegated to the given `report()` helper
+so the loop is nothing but the five moves.
 
 **Notes:** Have the room name each of the five moves before you run anything. Then
 reveal `main()` and run it.

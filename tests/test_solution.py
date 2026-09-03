@@ -1,5 +1,6 @@
 import ast
 import importlib.util
+import sys
 from pathlib import Path
 
 import torch
@@ -7,6 +8,10 @@ import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 SOLUTION_PATH = ROOT / "solution" / "mnist_network.py"
+PARTS_DIR = ROOT / "facilitator" / "parts"
+
+sys.path.insert(0, str(ROOT / "facilitator"))
+from build_file import assemble  # noqa: E402
 
 
 def load_module(path: Path, name: str):
@@ -73,7 +78,7 @@ def test_backward_and_manual_update_reduce_loss_on_a_fixed_problem():
     second_loss = torch.nn.functional.cross_entropy(model.forward(x), target)
 
     assert second_loss.item() < first_loss.item()
-    assert all(torch.count_nonzero(parameter.grad) == 0 for parameter in model.parameters())
+    assert all(torch.count_nonzero(p.grad) == 0 for p in model.parameters())
 
 
 def test_accuracy_uses_the_largest_score_as_the_prediction():
@@ -81,13 +86,10 @@ def test_accuracy_uses_the_largest_score_as_the_prediction():
     scores = torch.tensor([[0.0, 3.0, 1.0], [4.0, 2.0, 0.0]])
     targets = torch.tensor([1, 2])
 
-    result = workshop.accuracy(scores, targets)
-
-    assert result == 0.5
+    assert workshop.accuracy(scores, targets) == 0.5
 
 
 def test_solution_avoids_high_level_layers_and_optimizers():
-    assert SOLUTION_PATH.exists(), "The solution must exist before its AST can be checked"
     tree = ast.parse(SOLUTION_PATH.read_text())
     forbidden_attributes = {"Linear", "Sequential", "SGD", "Adam"}
 
@@ -103,25 +105,46 @@ def test_solution_avoids_high_level_layers_and_optimizers():
     assert used_forbidden_names == set()
 
 
-def test_every_facilitator_checkpoint_imports_without_running_training():
-    checkpoint_dir = ROOT / "facilitator" / "checkpoints"
-    expected = [
-        "01-linear.py",
-        "02-network.py",
-        "03-learning-step.py",
-        "04-complete.py",
-    ]
+# --------------------------------------------------------------- the parts
+# facilitator/parts/ is the single source of truth: the notebook's STEP cells
+# write those same fragments, and solution/mnist_network.py is generated from
+# them. If these drift, the slides, the notebook, and the answer key disagree.
 
-    for index, filename in enumerate(expected):
-        load_module(checkpoint_dir / filename, f"checkpoint_{index}")
+EXPECTED_PARTS = [
+    "00_header.py",
+    "01_linear.py",
+    "02_relu.py",
+    "03_network.py",
+    "04_data.py",
+    "05_main.py",
+]
 
 
-def test_final_recovery_checkpoint_is_a_self_contained_complete_program():
-    checkpoint = load_module(
-        ROOT / "facilitator" / "checkpoints" / "04-complete.py",
-        "complete_checkpoint",
+def test_the_expected_parts_exist():
+    assert [p.name for p in sorted(PARTS_DIR.glob("*.py"))] == EXPECTED_PARTS
+
+
+def test_parts_assemble_into_exactly_the_committed_solution():
+    assert assemble(PARTS_DIR) == SOLUTION_PATH.read_text(), (
+        "solution/mnist_network.py is stale - regenerate it with:\n"
+        "  python3 facilitator/build_file.py facilitator/parts solution/mnist_network.py"
     )
 
-    assert checkpoint.NeuralNetwork is not None
-    assert checkpoint.load_data is not None
-    assert checkpoint.main is not None
+
+def test_the_file_is_importable_after_every_step(tmp_path):
+    """A student who stops after any STEP still has a file that runs."""
+
+    for stop in range(len(EXPECTED_PARTS)):
+        stage = tmp_path / f"stage{stop}"
+        stage.mkdir()
+        for name in EXPECTED_PARTS[: stop + 1]:
+            (stage / name).write_text((PARTS_DIR / name).read_text())
+        compile(assemble(stage), f"stage{stop}", "exec")
+
+
+def test_every_part_fits_a_slide_code_panel():
+    """Long lines wrap badly on a projector; keep the taught code narrow."""
+
+    for part in sorted(PARTS_DIR.glob("*.py")):
+        for number, line in enumerate(part.read_text().splitlines(), 1):
+            assert len(line) <= 79, f"{part.name}:{number} is {len(line)} chars"

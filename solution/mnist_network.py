@@ -1,20 +1,27 @@
-"""PCS Workshop Intro final solution: a neural network built from PyTorch tensors."""
-
-import os
+"""PCS Workshop Intro: a neural network that reads handwritten digits."""
 
 import torch
 import torchvision
 
 
-# Seeded so the room sees the same numbers. Real training does not seed.
+# Seeded so the whole room sees the same numbers. Real training does not seed.
 torch.manual_seed(0)
+
+
+def report(epoch, loss, model, x_test, target_test):
+    """Print one progress line. Provided for you - not part of the lesson."""
+
+    with torch.no_grad():
+        test_acc = accuracy(model.forward(x_test), target_test)
+    print(f"epoch {epoch:3d}   loss {loss.item():.4f}"
+          f"   test_acc {test_acc:.4f}")
 
 
 class Linear:
     """One learned matrix multiplication: x @ weights + bias."""
 
     def __init__(self, in_features, out_features):
-        std = (2 / in_features) ** 0.5  # a sensible starting scale
+        std = (2 / in_features) ** 0.5
         self.weights = torch.randn(in_features, out_features) * std
         self.bias = torch.zeros(out_features)
 
@@ -29,30 +36,27 @@ class Linear:
 
 
 class ReLU:
-    """Keep positive values and replace negative values with zero."""
+    """Keep positive values, replace negative values with zero."""
 
     def forward(self, x):
         return x.clamp(min=0)
 
 
 class NeuralNetwork:
-    """Three linear layers with a ReLU bend between each pair."""
+    """Three Linear layers with a ReLU bend between each pair."""
 
     def __init__(self, input_size, hidden_size, output_size):
         self.layer1 = Linear(input_size, hidden_size)
         self.layer2 = Linear(hidden_size, hidden_size)
         self.layer3 = Linear(hidden_size, output_size)
-
         self.relu1 = ReLU()
         self.relu2 = ReLU()
 
     def forward(self, x):
         x = self.layer1.forward(x)
         x = self.relu1.forward(x)
-
         x = self.layer2.forward(x)
         x = self.relu2.forward(x)
-
         x = self.layer3.forward(x)
         return x
 
@@ -64,51 +68,32 @@ class NeuralNetwork:
         )
 
 
-def load_data(root="./data", train_limit=None):
-    """Download MNIST and turn every 28x28 image into 784 numbers.
+def load_data():
+    """Load MNIST and turn every 28x28 image into a row of 784 numbers."""
 
-    Set the MNIST_TRAIN_LIMIT environment variable to train on fewer images on a
-    memory-constrained machine. The workshop path in Colab uses all 60,000.
-    """
+    train = torchvision.datasets.MNIST(
+        root="./data", train=True, download=True)
+    test = torchvision.datasets.MNIST(
+        root="./data", train=False, download=True)
 
-    if train_limit is None and os.environ.get("MNIST_TRAIN_LIMIT"):
-        train_limit = int(os.environ["MNIST_TRAIN_LIMIT"])
-
-    train_data = torchvision.datasets.MNIST(
-        root=root,
-        train=True,
-        download=True,
-    )
-    test_data = torchvision.datasets.MNIST(
-        root=root,
-        train=False,
-        download=True,
-    )
-
-    x = train_data.data.float().view(-1, 784) / 255.0
-    target = train_data.targets
-    if train_limit is not None:
-        x = x[:train_limit]
-        target = target[:train_limit]
-
-    x_test = test_data.data.float().view(-1, 784) / 255.0
-    target_test = test_data.targets
+    x = train.data.float().view(-1, 784) / 255.0
+    target = train.targets
+    x_test = test.data.float().view(-1, 784) / 255.0
+    target_test = test.targets
     return x, target, x_test, target_test
 
 
 def accuracy(scores, targets):
-    """Return the fraction of rows whose largest score names the right digit."""
+    """The fraction of rows whose largest score names the right digit."""
 
-    guesses = scores.argmax(dim=1)
-    return (guesses == targets).float().mean().item()
+    return (scores.argmax(dim=1) == targets).float().mean().item()
 
 
 def main():
     x, target, x_test, target_test = load_data()
     model = NeuralNetwork(784, 128, 10)
-
     learning_rate = 0.1
-    epochs = 10  # Final experiment: change this to 60.
+    epochs = 10
 
     for epoch in range(1, epochs + 1):
         # 1. FORWARD PASS: make a guess.
@@ -117,31 +102,20 @@ def main():
         # 2. LOSS: measure how wrong the guess was.
         loss = torch.nn.functional.cross_entropy(prediction, target)
 
-        # 3. BACKPROPAGATION: calculate every weight's gradient.
+        # 3. BACKPROPAGATION: find every weight's gradient.
         loss.backward()
 
-        # 4. UPDATE WEIGHTS: take a small step in the better direction.
+        # 4. UPDATE WEIGHTS: take one small step downhill.
         with torch.no_grad():
             for parameter in model.parameters():
                 parameter -= learning_rate * parameter.grad
 
-        # Gradients add up by default, so clear them before the next guess.
+        # 5. CLEAR the gradients, then repeat.
         for parameter in model.parameters():
             parameter.grad.zero_()
 
-        # 5. REPEAT, pausing occasionally to watch learning happen.
-        step = 1 if epochs <= 15 else 10
-        if epoch == 1 or epoch == epochs or epoch % step == 0:
-            with torch.no_grad():
-                train_acc = accuracy(model.forward(x), target)
-                test_acc = accuracy(model.forward(x_test), target_test)
-
-            print(
-                f"epoch {epoch:3d}  "
-                f"loss {loss.item():.4f}  "
-                f"train_acc {train_acc:.4f}  "
-                f"test_acc {test_acc:.4f}"
-            )
+        if epoch == 1 or epoch % 5 == 0 or epoch == epochs:
+            report(epoch, loss, model, x_test, target_test)
 
 
 if __name__ == "__main__":

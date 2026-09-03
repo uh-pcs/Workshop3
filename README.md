@@ -26,15 +26,16 @@ Slides:
 1. Click **Open in Colab**.
 2. Leave the runtime on the standard **CPU** setting. No GPU is required.
 3. Run the setup cell at the top of the notebook.
-4. In Colab's left sidebar, click the **folder** icon and double-click
-   `/content/mnist_network.py`.
-5. Follow the slides and build the file with the facilitator.
-6. Save the Python file (Ctrl/Cmd+S in the editor) before each checkpoint cell.
-7. At the end, run the "see it read one digit" and "learning curve" cells, then
+4. Work down the notebook. There are **five STEP cells**, each labelled with the
+   slide it matches — type the code from the slide into the cell and run it.
+5. Run each **Checkpoint** cell when you reach it. Every STEP cell prints a
+   progress checklist so you always know where you are.
+6. At the end, run the "see it read one digit" and "learning curve" cells, then
    use the download cell to keep your Python file.
 
-Your work is `mnist_network.py`, not the notebook — use the download cell, not
-Colab's **File → Save**.
+Everything happens in the notebook cells, in order — you never need Colab's file
+panel. Your work is `mnist_network.py`, which the notebook assembles from your
+STEP cells; keep it with the **download cell**, not Colab's **File → Save**.
 
 The notebook downloads MNIST during setup. Start that cell while the opening
 slides are on screen so the data is ready when the code needs it.
@@ -59,17 +60,25 @@ The finished model uses:
 It deliberately does **not** use `torch.nn.Linear`, `torch.nn.Sequential`, or a
 PyTorch optimizer. Those tools are useful after you understand what they hide.
 
-## Checkpoints
+## The five steps
 
-The Colab notebook runs each checkpoint in a fresh Python process, so it always
-tests the version you saved:
+Each STEP cell writes one piece of the file, and the notebook reassembles
+`mnist_network.py` before every checkpoint:
 
-1. **Linear:** three images travel from 784 inputs to 128 outputs.
-2. **Network:** four images become ten digit scores each.
-3. **Learning:** one manual update makes a tiny fixed problem's loss smaller.
+| Step | Slide | You write | Checkpoint |
+|---|---|---|---|
+| 1 | 5 | `class Linear` | three images: `(3, 784) → (3, 128)` |
+| 2 | 6 | `class ReLU` | — |
+| 3 | 7 | `class NeuralNetwork` | four images: `(4, 784) → (4, 10)`, 6 tensors |
+| 4 | 9 | `load_data`, `accuracy` | — |
+| 5 | 12 | `main` | the real training run |
 
-If you fall behind, the facilitator can use the notebook's recovery lane to
-restore a known-good stage. Recovery exists to keep everyone in the final payoff.
+The imports, the seed, and a small `report()` printing helper are written for you
+so the training loop stays pure.
+
+Checkpoints run your file in a fresh Python process and explain what went wrong
+in one line rather than dumping a traceback. If you fall behind, the facilitator
+can call `recover(n)` to fill in the reference code through STEP *n*.
 
 ## The payoff
 
@@ -77,8 +86,9 @@ The first run trains for 10 epochs. Random guessing scores about 10%. You should
 see loss fall and accuracy rise well past that:
 
 ```text
-epoch   1  loss 2.4849  train_acc 0.1523  test_acc 0.1540
-epoch  10  loss 1.6871  train_acc 0.6402  test_acc 0.6460
+epoch   1   loss 2.4849   test_acc 0.1540
+epoch   5   loss 1.9106   test_acc 0.4835
+epoch  10   loss 1.6871   test_acc 0.6460
 ```
 
 Then change `epochs = 10` to `epochs = 60` and run again. On a standard Colab
@@ -90,16 +100,19 @@ guess beside the true digit, and plots the loss and accuracy curves.
 
 ## What's in this repository
 
-- `mnist_workshop.ipynb` — Colab setup, checkpoints, recovery, execution, inspection, and download
-- `starter/mnist_network.py` — the small file students begin with
-- `solution/mnist_network.py` — the complete teaching solution
+- `mnist_workshop.ipynb` — the Colab workbench: setup, five STEP cells, checkpoints, the run, inspection, recovery, download
+- `facilitator/parts/` — **the source of truth.** One file per STEP; the notebook writes these, and the slides show them
+- `facilitator/build_file.py` — concatenates the parts into `mnist_network.py`
+- `solution/mnist_network.py` — generated from the parts; the answer key
 - `solution/inspect_model.py` — optional helpers to see digits, mistakes, weights, and curves
-- `facilitator/checkpoints/` — staged recovery snapshots for the live room
 - `FACILITATOR.md` — pedagogy, timing, code reveals, expected output, and quick fixes
 - `EXTENSIONS.md` — optional experiments after the core hour
-- `slides/` — offline PDF of the deck and the source used to build it
-- `tests/` — behavioral and notebook-structure verification
+- `slides/` — offline PDF of the deck and `build_deck.py`, which generates it
+- `tests/` — behaviour, notebook structure, and **slide/code agreement**
 - `docs/design-history/` — the design and planning notes behind this workshop
+
+Because the parts feed the file, the slides, and the notebook, the three can
+never drift apart — `tests/test_slides_match_code.py` fails if they do.
 
 ## Run the solution locally instead
 
@@ -112,24 +125,34 @@ cd Workshop3
 python solution/mnist_network.py
 ```
 
+To follow the slides locally instead of reading the answer key, start from
+`facilitator/parts/00_header.py` and add each STEP yourself:
+
+```bash
+cp facilitator/parts/00_header.py mnist_network.py
+```
+
 PyTorch installation differs by operating system. Use the official selector at
 [pytorch.org/get-started](https://pytorch.org/get-started/locally/) rather than
 spending workshop time debugging local packages.
 
-On a memory-constrained local machine, run with `MNIST_TRAIN_LIMIT` set to train
-on fewer images:
+On a memory-constrained machine, train on fewer images by slicing right after
+`load_data()`: `x, target = x[:20000], target[:20000]`. Colab uses all 60,000.
+
+## Regenerate the solution and the deck
 
 ```bash
-MNIST_TRAIN_LIMIT=20000 python solution/mnist_network.py
+python3 facilitator/build_file.py facilitator/parts solution/mnist_network.py
+python3 slides/build_deck.py
+python3 -m pytest -q
 ```
-
-The official Colab path uses all 60,000 training images.
 
 ## Troubleshooting
 
 - **`ModuleNotFoundError: mnist_network`** — confirm the file still lives at
   `/content/mnist_network.py`.
-- **A checkpoint shows old code** — save the Python editor tab, then rerun it.
+- **A checkpoint shows old code** — re-run the STEP cell above it, then the
+  checkpoint. Running a STEP cell is what saves that piece of your file.
 - **A matrix-shape error mentions `@`** — trace `784 → 128 → 128 → 10`; adjacent
   dimensions must match.
 - **An in-place leaf-variable error appears** — put the parameter update inside

@@ -358,14 +358,13 @@ Trace the shapes with a finger: the 784 on both sides cancels; (images, 128) is 
 """)
 
     # 5 - Live build Linear
-    kicker("Live build  ·  Linear")
-    title("Build one learned layer", size=26, w=10.5)
+    kicker("STEP 1  ·  Linear")
+    title("Build one learned layer", size=27, w=14)
     code_panel([
         "class Linear:",
         "    def __init__(self, in_features, out_features):",
         "        std = (2 / in_features) ** 0.5",
-        "        self.weights = torch.randn(",
-        "            in_features, out_features) * std",
+        "        self.weights = torch.randn(in_features, out_features) * std",
         "        self.bias = torch.zeros(out_features)",
         "",
         "        self.weights.requires_grad_()",
@@ -376,15 +375,16 @@ Trace the shapes with a finger: the 784 on both sides cancels; (images, 128) is 
         "",
         "    def parameters(self):",
         "        return [self.weights, self.bias]",
-    ], x=12.7, y=2.7, w=PAGE_W - M - 12.7, h=8.9, size=9.5)
+    ], x=M, y=3.4, w=14.0, h=6.7, size=9)
     read_card([
-        "Random weights, zero biases.",
+        "Random weights,",
+        "zero biases.",
         "Ask PyTorch to track them.",
         "forward() makes the guess.",
         "parameters() = every value",
         "the loop may change.",
-    ], x=M, y=5.1, w=10.2)
-    checkpoint_banner("Checkpoint 1 - save the file, run the cell.  Expect (3, 784) -> (3, 128).")
+    ], x=15.6, y=3.4, w=8.05)
+    checkpoint_banner("Checkpoint 1  ·  three images through one layer.  Expect (3, 784) -> (3, 128).")
     tag(5)
     page("""
 Concept: a layer is a learned matrix multiply plus a bias.
@@ -396,7 +396,7 @@ Recovery: recover(1).
 """)
 
     # 6 - ReLU
-    kicker("Live build  ·  ReLU")
+    kicker("STEP 2  ·  ReLU")
     title("Add a bend", size=32, w=10)
     code_panel([
         "class ReLU:",
@@ -424,10 +424,8 @@ Recovery: recover(2).
 """)
 
     # 7 - NeuralNetwork
-    kicker("Live build  ·  Network")
-    title("784  ->  128  ->  128  ->  10", size=30)
-    txt(M, 3.9, 22, 0.8, [("Linear, ReLU, Linear, ReLU, Linear. The ReLUs change values, not dimensions.",
-                           tstyle(12, FAINT, italic=True))])
+    kicker("STEP 3  ·  NeuralNetwork")
+    title("784  ->  128  ->  128  ->  10", size=28, w=13)
     code_panel([
         "class NeuralNetwork:",
         "    def __init__(self, input_size, hidden_size, output_size):",
@@ -436,7 +434,8 @@ Recovery: recover(2).
         "        self.layer3 = Linear(hidden_size, output_size)",
         "        self.relu1 = ReLU()",
         "        self.relu2 = ReLU()",
-        "",
+    ], x=M, y=3.4, w=13.2, h=3.9, size=9)
+    code_panel([
         "    def forward(self, x):",
         "        x = self.layer1.forward(x)",
         "        x = self.relu1.forward(x)",
@@ -444,13 +443,21 @@ Recovery: recover(2).
         "        x = self.relu2.forward(x)",
         "        x = self.layer3.forward(x)",
         "        return x",
-    ], x=9.9, y=4.9, w=PAGE_W - M - 9.9, h=6.8, size=8.5)
+        "",
+        "    def parameters(self):",
+        "        return (",
+        "            self.layer1.parameters()",
+        "            + self.layer2.parameters()",
+        "            + self.layer3.parameters()",
+        "        )",
+    ], x=14.8, y=3.4, w=8.85, h=7.0, size=9)
     read_card([
-        "Six trainable tensors:",
-        "three weights,",
-        "three biases.",
-    ], x=M, y=5.2, w=7.6)
-    checkpoint_banner("Checkpoint 2 - four images become ten scores each.  Expect (4, 784) -> (4, 10).")
+        "All three methods, or Checkpoint 2 fails.",
+        "parameters() adds the three lists into",
+        "one flat list of six tensors:",
+        "three weights, three biases.",
+    ], x=M, y=7.7, w=13.2, header="type all of it")
+    checkpoint_banner("Checkpoint 2  ·  four images become ten scores each.  Expect (4, 784) -> (4, 10).")
     tag(7)
     page("""
 Concept: the pieces become one object that turns pixels into ten scores.
@@ -475,26 +482,34 @@ Biggest score wins, with or without it.
 """)
 
     # 9 - Data
-    kicker("Live build  ·  Data")
+    kicker("STEP 4  ·  load_data + accuracy")
     title("Load MNIST", size=32, w=9)
     code_panel([
-        "train = torchvision.datasets.MNIST(",
-        '    root=\"./data\", train=True, download=True)',
-        "test = torchvision.datasets.MNIST(",
-        '    root=\"./data\", train=False, download=True)',
+        "def load_data():",
+        "    train = torchvision.datasets.MNIST(",
+        '        root="./data", train=True, download=True)',
+        "    test = torchvision.datasets.MNIST(",
+        '        root="./data", train=False, download=True)',
         "",
-        "x = train.data.float().view(-1, 784) / 255.0",
-        "target = train.targets",
-        "x_test = test.data.float().view(-1, 784) / 255.0",
-        "target_test = test.targets",
-    ], x=10.4, y=2.7, w=PAGE_W - M - 10.4, h=7.2, size=9.5)
+        "    x = train.data.float().view(-1, 784) / 255.0",
+        "    target = train.targets",
+        "    x_test = test.data.float().view(-1, 784) / 255.0",
+        "    target_test = test.targets",
+        "    return x, target, x_test, target_test",
+        "",
+        "",
+        "def accuracy(scores, targets):",
+        "    return (scores.argmax(dim=1) == targets).float().mean().item()",
+    ], x=M, y=3.4, w=14.4, h=7.3, size=9)
     read_card([
         "Learn on one set,",
         "test on a separate set.",
         "Flatten to 784,",
         "scale 0-255 to 0-1,",
         "keep each digit as the target.",
-    ], x=M, y=4.6, w=8.4)
+        "accuracy: how often the biggest",
+        "score names the right digit.",
+    ], x=16.0, y=3.4, w=7.65)
     tag(9)
     page("""
 Concept: the flatten/scale from slide 3, on real data, plus the train/test split.
@@ -523,7 +538,7 @@ whole explanation students need today.
 """)
 
     # 11 - Update
-    kicker("Live build  ·  Update")
+    kicker("Inside the loop  ·  the update")
     title("One small step, then clear", size=29, w=10)
     code_panel([
         "loss.backward()",
@@ -554,16 +569,30 @@ Recovery: recover(3).
 """)
 
     # 12 - It is all the loop
-    kicker("The code is the loop")
-    title("Nothing is hidden", size=32)
-    loop_strip(3.9, checked=5)
+    kicker("STEP 5  ·  main")
+    title("Nothing is hidden", size=30, w=14)
     code_panel([
-        "prediction = model.forward(x)                 # 1 forward",
-        "loss = cross_entropy(prediction, target)      # 2 loss",
-        "loss.backward()                               # 3 backprop",
-        "parameter -= learning_rate * parameter.grad   # 4 update",
-        "parameter.grad.zero_()                        # 5 repeat -> next epoch",
-    ], x=M, y=7.2, w=PAGE_W - 2 * M, h=4.4, size=9.5)
+        "def main():",
+        "    x, target, x_test, target_test = load_data()",
+        "    model = NeuralNetwork(784, 128, 10)",
+        "    learning_rate = 0.1",
+        "    epochs = 10",
+        "",
+        "    for epoch in range(1, epochs + 1):",
+        "        prediction = model.forward(x)",
+        "        loss = torch.nn.functional.cross_entropy(prediction, target)",
+        "        loss.backward()",
+        "",
+        "        with torch.no_grad():",
+        "            for parameter in model.parameters():",
+        "                parameter -= learning_rate * parameter.grad",
+        "",
+        "        for parameter in model.parameters():",
+        "            parameter.grad.zero_()",
+        "",
+        "        if epoch == 1 or epoch % 5 == 0 or epoch == epochs:",
+        "            report(epoch, loss, model, x_test, target_test)",
+    ], x=M, y=3.4, w=PAGE_W - 2 * M, h=9.5, size=10)
     tag(12)
     page("""
 Have the room name each of the five moves before you run anything.
